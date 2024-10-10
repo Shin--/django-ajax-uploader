@@ -1,9 +1,6 @@
-try:
-    import json
-except ImportError:
-    from django.utils import simplejson as json
+import json
+import types
 
-from django.core.files.base import File
 from django.core.serializers.json import DjangoJSONEncoder
 
 from django.http import HttpResponse, HttpResponseBadRequest, Http404, HttpResponseNotAllowed
@@ -32,6 +29,8 @@ class AjaxFileUploader(object):
                 try:
                     if 'qqfile' in request.GET:
                         filename = request.GET['qqfile']
+                    elif 'qqfilename' in request.POST:
+                        filename = request.POST['qqfilename']
                     else:
                         filename = request.REQUEST['qqfilename']
                 except KeyError:
@@ -48,7 +47,13 @@ class AjaxFileUploader(object):
                     # that each upload is a separate request, so FILES should
                     # only have one entry. Thus, we can just grab the first
                     # (and only) value in the dict.
-                    upload = request.FILES.values()[0]
+                    values = request.FILES.values()
+                    if isinstance(values, list):
+                        upload = values[0]
+                    elif isinstance(values, types.GeneratorType):
+                        upload =  values.__next__()
+                    else:
+                        raise NotImplementedError('unknown FILES type')
                 else:
                     raise Http404("Bad Upload")
                 filename = upload.name
