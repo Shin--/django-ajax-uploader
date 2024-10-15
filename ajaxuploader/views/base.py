@@ -3,7 +3,7 @@ import types
 
 from django.core.serializers.json import DjangoJSONEncoder
 
-from django.http import HttpResponse, HttpResponseBadRequest, Http404, HttpResponseNotAllowed
+from django.http import HttpResponse, HttpResponseBadRequest, Http404, HttpResponseNotAllowed, HttpRequest
 
 from ajaxuploader.backends.local import LocalUploadBackend
 from ajaxuploader.signals import file_uploaded
@@ -17,10 +17,14 @@ class AjaxFileUploader(object):
 
     def __call__(self, request, *args, **kwargs):
         return self._ajax_upload(request, *args, **kwargs)
+    
+    def is_ajax_request(self, request: HttpRequest) -> bool:
+        return request.META.get('HTTP_X_REQUESTED_WITH') == 'XMLHttpRequest'
 
     def _ajax_upload(self, request, *args, **kwargs):
         if request.method == "POST":
-            if request.is_ajax():
+
+            if self.is_ajax_request(request):
                 # the file is stored raw in the request
                 upload = request
                 is_raw = True
